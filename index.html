@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gundu ❤️</title>
+    <style>
+        :root {
+            --bg-1: #07112b;
+            --bg-2: #0f1740;
+            --glass: rgba(255, 255, 255, 0.04);
+            --accent-1: #ff6b81;
+            --accent-2: #ffd27f;
+            --muted: #9fb0d1;
+            --card-radius: 18px;
+            --max-width: 1100px;
+            --ease-s: cubic-bezier(.2, .9, .2, 1);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            background: radial-gradient(1200px 800px at 10% 10%, rgba(255, 107, 129, 0.06), transparent 6%),
+                linear-gradient(180deg, var(--bg-1), var(--bg-2));
+            color: #e6eef8;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+        }
+
+        .app {
+            width: 100%;
+            max-width: var(--max-width);
+            display: grid;
+            grid-template-columns: 480px 1fr;
+            gap: 20px;
+            align-items: stretch;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            border-radius: var(--card-radius);
+            padding: 18px;
+            box-shadow: 0 20px 60px rgba(3, 6, 20, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (max-width: 980px) {
+            .app {
+                grid-template-columns: 1fr;
+                padding: 14px;
+            }
+        }
+
+        .play {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            min-height: 520px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.01));
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        canvas#bgCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 0;
+        }
+
+        .drop-wrap {
+            position: relative;
+            z-index: 6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .drop {
+            pointer-events: auto;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.04), transparent 30%),
+                linear-gradient(135deg, rgba(255, 107, 129, 0.12), rgba(255, 210, 127, 0.08));
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow: 0 12px 50px rgba(6, 9, 30, 0.6), inset 0 -8px 30px rgba(255, 107, 129, 0.02);
+            transition: transform 350ms var(--ease-s), box-shadow 350ms var(--ease-s);
+            transform-origin: center;
+        }
+
+        .drop.hover {
+            transform: scale(1.06);
+            box-shadow: 0 18px 70px rgba(6, 9, 30, 0.75);
+        }
+
+        .drop svg {
+            width: 110px;
+            height: 110px;
+            filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.6));
+        }
+
+        .deck {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 18px;
+            z-index: 8;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            flex-wrap: wrap;
+        }
+
+        .heart {
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            background: linear-gradient(180deg, var(--accent-1), #ff4b6b);
+            display: grid;
+            place-items: center;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 160ms ease, box-shadow 160ms ease;
+        }
+
+        .heart:active {
+            cursor: grabbing
+        }
+
+        .heart svg {
+            width: 34px;
+            height: 34px;
+            fill: white;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 6px;
+        }
+
+        .panel h1 {
+            margin: 0;
+            font-size: 20px;
+            letter-spacing: -0.2px;
+            color: #fff;
+        }
+
+        .panel p.sub {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .modes {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .mode {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--glass);
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .mode.active {
+            background: linear-gradient(90deg, rgba(255, 107, 129, 0.12), rgba(255, 210, 127, 0.06));
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(255, 107, 129, 0.06);
+        }
+
+        .message-board {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.005));
+            border-radius: 10px;
+            padding: 12px;
+            min-height: 180px;
+            max-height: 180px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .message-board::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .message-board::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 107, 129, 0.4);
+            border-radius: 4px;
+        }
+
+        .message-board .msg {
+            margin-bottom: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.005));
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        button.btn {
+            background: var(--accent-1);
+            color: #0f1220;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button.ghost {
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        footer.small {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: auto;
+        }
+
+        .hint {
+            position: absolute;
+            left: 14px;
+            top: 14px;
+            color: var(--muted);
+            z-index: 9;
+            font-size: 13px;
+        }
+
+        .bloom-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9;
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .app {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+
+            .play {
+                min-height: 400px;
+                padding: 12px;
+            }
+
+            .drop {
+                width: 160px;
+                height: 160px;
+            }
+
+            .drop svg {
+                width: 80px;
+                height: 80px;
+            }
+
+            .deck {
+                gap: 8px;
+            }
+
+            .heart {
+                width: 48px;
+                height: 48px;
+            }
+
+            .heart svg {
+                width: 24px;
+                height: 24px;
+            }
+
+            .panel h1 {
+                font-size: 18px;
+            }
+
+            .panel p.sub {
+                font-size: 12px;
+            }
+
+            .mode {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .message-board {
+                min-height: 140px;
+                max-height: 140px;
+                font-size: 12px;
+                padding: 8px;
+            }
+
+            .hint {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app" role="application" aria-label="Cheer her up interactive page">
+        <section class="play" aria-label="Interactive area">
+            <canvas id="bgCanvas" aria-hidden="true"></canvas>
+            <div class="hint">Click on the heart</div>
+            <div class="drop-wrap" aria-hidden="false">
+                <div id="dropTarget" class="drop" role="button" aria-label="Drop a heart here to reveal a message"
+                    tabindex="0">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="gA" x1="0" x2="1">
+                                <stop offset="0" stop-color="#ff9aa2" />
+                                <stop offset="1" stop-color="#ffcf7b" />
+                            </linearGradient>
+                        </defs>
+                        <path
+                            d="M12 21s-6.5-4.35-9.06-7.06C-.45 10.34 2.6 6 6.5 6c2.04 0 3.5 1.03 4.5 2.22C11.99 7.03 13.45 6 15.5 6 19.4 6 22.45 10.34 21.06 13.94 18.5 16.65 12 21 12 21z"
+                            fill="url(#gA)" />
+                    </svg>
+                </div>
+            </div>
+            <div id="heartDeck" class="deck" aria-hidden="false"></div>
+            <div id="bloomLayer" class="bloom-layer" aria-hidden="true"></div>
+        </section>
+
+        <aside class="panel" aria-label="Controls and messages">
+            <div>
+                <h1>Papu, Here’s a Little Spark from My Heart</h1>
+                <p class="sub">Every heart you touch here carries a piece of my love. Tap one, and feel how much you
+                    mean to me 💖.</p>
+            </div>
+
+            <div class="modes" role="tablist" aria-label="Mood modes">
+                <div class="mode active" data-mode="sweet" role="tab" aria-selected="true">Sweet</div>
+                <div class="mode" data-mode="funny" role="tab" aria-selected="false">Funny</div>
+                <div class="mode" data-mode="apology" role="tab" aria-selected="false">Apology</div>
+                <div class="mode" data-mode="romantic" role="tab" aria-selected="false">Romantic</div>
+            </div>
+
+            <div class="message-board" id="messageBoard" aria-live="polite"></div>
+
+            <div class="controls">
+                <button class="btn" id="resetBtn">Reset Hearts</button>
+                <button class="btn ghost" id="clearMsgBtn">Clear Messages</button>
+            </div>
+
+            <footer class="small">
+                &copy; Your Chontu
+            </footer>
+        </aside>
+    </div>
+
+    <script>
+        const heartDeck = document.getElementById('heartDeck');
+        const dropTarget = document.getElementById('dropTarget');
+        const messageBoard = document.getElementById('messageBoard');
+        const bloomLayer = document.getElementById('bloomLayer');
+        const modes = document.querySelectorAll('.mode');
+
+        const allModes = {
+            sweet: [
+                { x: -200, y: -200, text: 'Your smile is my favorite sunrise 🌅' }, { x: 250, y: -150, text: 'I carry your heart in mine, always 💓' }, { x: -230, y: 200, text: 'Even in silence, your presence speaks volumes ❤️' }, { x: 200, y: 220, text: 'You make ordinary moments feel magical ✨' },
+            ],
+            funny: [
+                { x: -200, y: -200, text: 'I overthink, I talk too much, yet you still love me—how did I get so lucky? 😅' },
+                { x: 250, y: -150, text: 'We fight over silly things, but I love you more than ever 🍕' },
+                { x: 200, y: 220, text: 'If talking too much was a sport, I’d win gold—and you’d cheer me on 🏅💓' },
+                { x: 200, y: 220, text: 'Your laughter over my silly thoughts is my daily therapy 😏💓' },
+            ],
+            apology: [
+                { x: -200, y: -200, text: 'I messed up, but my heart is always yours ❤️' },
+                { x: 250, y: -150, text: 'Thank you for always being patient and listening 💫' },
+                { x: -230, y: 200, text: 'Your forgiveness means more than anything 🌎' },
+                { x: 200, y: 220, text: 'I’m sorry… I never want to hurt you 💗' },
+            ],
+            romantic: [
+                { x: -200, y: -200, text: 'Every moment with you feels like a dream 🥰' },
+                { x: 250, y: -150, text: 'Your love is my safest place 🌸' },
+                { x: -230, y: 200, text: 'Even the stars can’t shine as bright as your love ✨' },
+                { x: 200, y: 220, text: 'With you, my heart feels at home 💞' },
+            ]
+        };
+
+        let currentMode = 'sweet';
+        let availableMessages = [];
+
+        function createHearts() {
+            heartDeck.innerHTML = '';
+            messageBoard.innerHTML = ''; // clear messages
+            availableMessages = [...allModes[currentMode]]; // clone array for unique messages
+
+            for (let i = 0; i < 4; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('heart');
+                heart.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-4.35-9.06-7.06C-.45 10.34 2.6 6 6.5 6c2.04 0 3.5 1.03 4.5 2.22C11.99 7.03 13.45 6 15.5 6 19.4 6 22.45 10.34 21.06 13.94 18.5 16.65 12 21 12 21z"/></svg>`;
+                heartDeck.appendChild(heart);
+
+                heart.addEventListener('click', () => dropHeart(heart));
+                heart.addEventListener('touchstart', () => dropHeart(heart));
+            }
+        }
+
+        function dropHeart(heart) {
+            if (!heart || availableMessages.length === 0) return;
+
+            const randomIndex = Math.floor(Math.random() * availableMessages.length);
+            const msgObj = availableMessages.splice(randomIndex, 1)[0]; // remove message to avoid repeat
+            messageBoard.innerHTML += `<div class="msg">${msgObj.text}</div>`;
+            heart.remove();
+            createBloom();
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            messageBoard.scrollTop = messageBoard.scrollHeight;
+        }
+
+        function createBloom() {
+            const bloom = document.createElement('div');
+            bloom.style.position = 'absolute';
+            bloom.style.width = '80px';
+            bloom.style.height = '80px';
+            bloom.style.borderRadius = '50%';
+            bloom.style.background = 'radial-gradient(circle, #ff6b81, #ffd27f)';
+            bloom.style.left = `${Math.random() * (bloomLayer.clientWidth - 80)}px`;
+            bloom.style.top = `${Math.random() * (bloomLayer.clientHeight - 80)}px`;
+            bloom.style.opacity = '0.6';
+            bloomLayer.appendChild(bloom);
+            setTimeout(() => bloom.remove(), 800);
+        }
+
+        modes.forEach(mode => {
+            mode.addEventListener('click', () => {
+                modes.forEach(m => m.classList.remove('active'));
+                mode.classList.add('active');
+                currentMode = mode.dataset.mode;
+                createHearts();
+            });
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => createHearts());
+        document.getElementById('clearMsgBtn').addEventListener('click', () => messageBoard.innerHTML = '');
+
+        createHearts();
+
+        // Background canvas effect
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function animateBg() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < 50; i++) {
+                ctx.fillStyle = `rgba(255,107,129,${Math.random() * 0.05})`;
+                ctx.beginPath();
+                ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+    </script>
+
+</body>
+
+</html>
